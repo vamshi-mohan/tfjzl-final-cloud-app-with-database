@@ -3,28 +3,36 @@
 <head>
     <meta charset="UTF-8">
     {% load static %}
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Exam Result</title>
 </head>
+
 <body>
 
- <nav class="navbar navbar-light bg-light">
+<!-- ================= NAVBAR ================= -->
+<nav class="navbar navbar-light bg-light">
     <div class="container-fluid">
         <div class="navbar-header">
-              <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
+            <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
         </div>
         <ul class="nav navbar-nav navbar-right">
             {% if user.is_authenticated %}
             <li>
-                <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
-                <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
+                <a class="btn btn-link" href="#">
+                    {{ user.first_name }} ({{ user.username }})
+                </a>
+                <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">
+                    Logout
+                </a>
             </li>
             {% else %}
             <li>
                 <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
                     {% csrf_token %}
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Username" name="username" >
-                        <input type="password" class="form-control" placeholder="Username" name="psw" >
+                        <input type="text" class="form-control" placeholder="Username" name="username">
+                        <input type="password" class="form-control" placeholder="Password" name="psw">
                         <button class="btn btn-primary" type="submit">Login</button>
                         <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
                     </div>
@@ -35,21 +43,72 @@
     </div>
 </nav>
 
-<div class="container-fluid">
-    {% if grade > 80 %}
+<!-- ================= RESULT BODY ================= -->
+<div class="container-fluid mt-3">
+
+    {% if total_score >= 80 %}
+    <!-- ✅ PASS -->
     <div class="alert alert-success">
-       <!--HINT Display passed info -->
+        <h4>🎉 Congratulations {{ user.first_name }}!</h4>
+        <p>You have passed the exam.</p>
+        <strong>Score: {{ total_score }}/100</strong>
     </div>
-        {% else %}
-        <div class="alert alert-danger">
-            <!--HINT Display failed info -->
-        </div>
-        <a class="btn btn-link text-danger" href="{% url 'onlinecourse:course_details' course.id %}">Re-test</a>
-        {% endif %}
-        <div class="card-columns-vertical mt-1">
-        <h5 class="">Exam results</h5>
-            <!--HINT Display exam results-->
-        </div>
+    {% else %}
+    <!-- ❌ FAIL -->
+    <div class="alert alert-danger">
+        <h4>❌ Failed</h4>
+        <p>
+            Sorry, {{ user.first_name }}!  
+            You have failed the exam with score {{ total_score }}/100
+        </p>
     </div>
+    <a class="btn btn-link text-danger"
+       href="{% url 'onlinecourse:course_details' course.id %}">
+        Re-test
+    </a>
+    {% endif %}
+
+    <!-- ================= DETAILED RESULTS ================= -->
+    <div class="card-columns-vertical mt-4">
+        <h5>Exam Results</h5>
+
+        {% for result in question_results %}
+        <div class="card mt-2">
+            <div class="card-header">
+                <strong>{{ result.question.question_text }}</strong>
+            </div>
+
+            <div class="card-body">
+                {% for choice in result.question.choice_set.all %}
+
+                    {% if choice in submission.choices.all %}
+                        {% if choice.is_correct %}
+                        <div class="text-success">
+                            ✔ Correct answer selected: {{ choice.choice_text }}
+                        </div>
+                        {% else %}
+                        <div class="text-danger">
+                            ✖ Wrong answer selected: {{ choice.choice_text }}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        {% if choice.is_correct %}
+                        <div class="text-warning">
+                            ⚠ Correct answer not selected: {{ choice.choice_text }}
+                        </div>
+                        {% else %}
+                        <div>
+                            {{ choice.choice_text }}
+                        </div>
+                        {% endif %}
+                    {% endif %}
+
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
 </body>
 </html>
